@@ -1,0 +1,36 @@
+version: "3.7"
+
+services:
+  backend:
+    container_name: backend
+    build:
+      context: ./backend
+    volumes:
+      - ./backend:/var/www/html
+      - ./logs/7.4:/var/log/apache2
+      - ./init/development/php.ini:/usr/local/etc/php/php.ini
+
+    privileged: true
+    deploy:
+      restart_policy:
+        condition: always
+    ports:
+      - "80:80"
+      - "8000:8000"
+  backend-php8:
+    container_name: backend-8
+    build:
+      context: ./backend
+      dockerfile: Dockerfile-php8
+    volumes:
+      - ./backend:/var/www/html
+      - ./logs/8.3:/var/log/apache2
+      - ./init/development/php.ini:/usr/local/etc/php/php.ini
+
+    privileged: true
+    deploy:
+      restart_policy:
+        condition: always
+    ports:
+      - "81:80"
+      - "8001:8000"
