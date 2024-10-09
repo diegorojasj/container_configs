@@ -39,7 +39,7 @@ spec:
           httpGet:
             path: /
             port: 80
-          initialDelaySecond: 5
+          initialDelaySeconds: 5
           periodSeconds: 10
         # Open port check
         livenessProbe:
