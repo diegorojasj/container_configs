@@ -1,0 +1,44 @@
+services:
+  traefik:
+    image: traefik:v3.3
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      # API / dashboard — insecure mode OFF; dashboard is routed via HTTPS router below
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=web"
+      # Entrypoints
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.websecure.address=:443"
+      # Let's Encrypt
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=${EMAIL:-you@email.com}"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    labels:
+      - "traefik.enable=true"
+      # Dashboard router
+      - "traefik.http.routers.dashboard.rule=Host(`${HOST:-localhost}`)"
+      - "traefik.http.routers.dashboard.entrypoints=websecure"
+      # Localhost: comment the line below. Production (real domain): keep it.
+      - "traefik.http.routers.dashboard.tls.certresolver=myresolver"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.middlewares=auth"
+      #   echo $(htpasswd -nB youruser) | sed -e 's/\$/\$\$/g'
+      - "traefik.http.middlewares.auth.basicauth.users=${USER:-admin}:${PASSWORD:-$$2y$$05$$cB8I1gtClFlJlEYmdurKEuOeCXqVw0M7BFwXaqufPaGeVS.9BNlPq}" # default: admin/1234 — override in .env
+    ports:
+      - "80:80"
+      - "443:443"
+      # Dashboard port removed — access via HTTPS router above instead
+    volumes:
+      - "${SOCKET:-/var/run/docker.sock}:/var/run/docker.sock:ro"
+      - "./letsencrypt:/letsencrypt"
+    networks:
+      - web
+
+networks:
+  web:
+    external: true
